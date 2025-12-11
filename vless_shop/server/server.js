@@ -2,6 +2,10 @@ import express from 'express';
 
 const app = express();
 
+app.get("/", async (req, res) => {
+  res.send("add");
+});
+
 app.post("/post", async (req, res) => {
   res.send("add post endpoint");
 });
