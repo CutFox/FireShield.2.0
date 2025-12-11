@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "node --experimental-vm-modules --no-warnings ./node_modules/jest/bin/jest.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "back": "nodemon ./vless_shop/server/server.js"
   },
   "keywords": [],
   "author": "",
