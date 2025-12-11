@@ -1,164 +1,93 @@
-// import express from 'express';
-
-// const app = express();
-
-// app.get("/", async (req, res) => {
-//   res.send("add");
-// });
-
-// app.post("/post", async (req, res) => {
-//   res.send("add post endpoint");
-// });
-
-// app.get('/redirect_app', async (req, res) => {
-//     try {
-//         const { target } = req.query;
-//         if (!target) {
-//             return res.status(404);
-//         }
-//         let targetUrl;
-//         try {
-            
-//             if (target.startsWith('happ')) {
-//               targetUrl = new URL(target);  
-//             }
-
-//         } catch {
-//             console.log('Invalid URL format');
-//         }
-//         res.redirect(target);
-//     } catch (error) {
-//         console.error('Redirect error:', error);
-//         res.status(500).json({
-//             error: 'Internal server error',
-//             message: error.message
-//         });
-//     }
-// });
-
-// app.get('/redirect', (req, res) => {
-//     res.redirect(`happ://crypt4/wHjraNeLxL5pabHzutJK7WQfuTL8DJtbRqwLk0eN9k/ZsGc4rEYadbx9bHy0pfL7rqHMKYhd0ixPj+hjUHjcu7V1uLXSkVhM1KHWTkUcCs6qcLF6HFvSE7o2qqE+edQ/3V9oyryLKQTJIF38k3cBfioMuGpV2lZb0MUa4OWmllmbSZlq558CnzcBA9tFHBW4SkslOdD3iqNE1n5stutAr9HRvKrr7oIE69CoVjlZHQUKeP9KY9vIQOEmZv1QSypBj+ihIva7gJ7I0AavKzlU+iT7HDXknmkQat/bpIgJLAoVTnrnoOrMK2CCH11h7zeFQW08XRndiOj1qi6lF5wcQuaUYL/seTH0N5VTJHvRQzAKYWgEhcK+P/JhgOgJDXN6W5n2U7IJ9PdzQ7B4Su78M44hTWBvNHJI3782oQvmeSW/G2Ol/UiGRbfjuRVr0vn/w7dYVLbo3iSGuKyEXN4eaGJS44jo90zkqc7Lh174RwBCNPJjt+ml/ijWl/bV2XlsBBWv5pFPRf3NAtGDPtRi3Q1aB26xlQC9tRRA/5MXPTJTPvevUx6rXPGtvNFaxKrA2vilr4I7z3ZjYTXFUXJut9IFRoaY3BnX54KHcG6lRdXCSA+6Pxqus6G1TyP9oUdNjr/KhfG+XX605sXS6dGf0bf4Z/Ct7vtmPYL8Ps2vxBo=`);
-// });
-
-// const PORT = process.env.PORT || 8080;
-// app.listen(PORT, () => {
-//     console.log(`Server running on port ${PORT}`);
-// });
-
-
-
-// server-cloudflare-ssl.js
+// server-ssl-prosubaru.js
 import express from 'express';
 import https from 'https';
 import http from 'http';
 import fs from 'fs';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import { fileURLToPath } from 'url';
-import path from 'path';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // ====================
-// CLOUDFLARE SSL НАСТРОЙКИ
+// ПРАВИЛЬНАЯ SSL КОНФИГУРАЦИЯ
 // ====================
-
-// Вариант A: Cloudflare Origin Certificate (рекомендуется)
-// 1. В панели Cloudflare: SSL/TLS → Origin Server → Create Certificate
-// 2. Выберите RSA (2048) или ECC
-// 3. Сохраните ключ и сертификат в файлы
 
 const sslOptions = {
-    // Cloudflare Origin Certificate
-    key: fs.readFileSync('/root/cert/prosubaru.life/fullchain.pem'),
-    cert: fs.readFileSync('/root/cert/prosubaru.life/privkey.pem'),
+    // ПРИВАТНЫЙ КЛЮЧ - это отдельный файл!
+    key: fs.readFileSync('/root/cert/prosubaru.life/privkey.pem'),
     
-    // ИЛИ Let's Encrypt (если хотите прямой доступ)
-    // key: fs.readFileSync('/etc/letsencrypt/live/ваш-домен.com/privkey.pem'),
-    // cert: fs.readFileSync('/etc/letsencrypt/live/ваш-домен.com/fullchain.pem'),
+    // СЕРТИФИКАТ - цепочка сертификатов
+    cert: fs.readFileSync('/root/cert/prosubaru.life/fullchain.pem'),
     
-    // Дополнительные настройки
-    minVersion: 'TLSv1.2',
-    ciphers: [
-        'ECDHE-ECDSA-AES128-GCM-SHA256',
-        'ECDHE-RSA-AES128-GCM-SHA256',
-        'ECDHE-ECDSA-AES256-GCM-SHA384',
-        'ECDHE-RSA-AES256-GCM-SHA384',
-        'ECDHE-ECDSA-CHACHA20-POLY1305',
-        'ECDHE-RSA-CHACHA20-POLY1305'
-    ].join(':'),
-    honorCipherOrder: true
+    // Дополнительно: промежуточные сертификаты (обычно уже в fullchain.pem)
+    // ca: fs.readFileSync('/root/cert/prosubaru.life/chain.pem')
 };
 
 // ====================
-// MIDDLEWARE ДЛЯ CLOUDFLARE
+// ПРОВЕРКА ФАЙЛОВ
 // ====================
 
-// Защита headers с помощью helmet
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            imgSrc: ["'self'", "data:", "https:", "http:"],
-            connectSrc: ["'self'", "https://api.ваш-домен.com"],
-            fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"]
-        }
-    },
-    hsts: {
-        maxAge: 31536000, // 1 year
-        includeSubDomains: true,
-        preload: true
-    },
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" }
-}));
+console.log('🔍 Проверка SSL файлов...');
 
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 минут
-    max: 100, // лимит запросов с одного IP
-    message: 'Слишком много запросов с вашего IP',
-    standardHeaders: true,
-    legacyHeaders: false
-});
-app.use(limiter);
-
-// Trust Cloudflare proxy (важно!)
-app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal', '172.64.0.0/13', '173.245.48.0/20']);
-
-// Cloudflare middleware - получение реального IP
-app.use((req, res, next) => {
-    // Cloudflare передаёт реальный IP в этих заголовках
-    const cfConnectingIp = req.headers['cf-connecting-ip'];
-    const xForwardedFor = req.headers['x-forwarded-for'];
-    
-    // Реальный IP пользователя
-    req.realIp = cfConnectingIp || 
-                 (xForwardedFor ? xForwardedFor.split(',')[0].trim() : null) || 
-                 req.ip;
-    
-    // Флаг что запрос через Cloudflare
-    req.fromCloudflare = !!req.headers['cf-ray'];
-    
-    // Логирование
-    if (req.fromCloudflare) {
-        console.log({
-            timestamp: new Date().toISOString(),
-            realIp: req.realIp,
-            cfRay: req.headers['cf-ray'],
-            country: req.headers['cf-ipcountry'],
-            method: req.method,
-            path: req.path,
-            userAgent: req.headers['user-agent']?.substring(0, 100)
-        });
+try {
+    // Проверяем приватный ключ
+    const keyPath = '/root/cert/prosubaru.life/privkey.pem';
+    if (!fs.existsSync(keyPath)) {
+        throw new Error(`❌ Не найден приватный ключ: ${keyPath}`);
     }
     
+    const keyContent = fs.readFileSync(keyPath, 'utf8');
+    if (!keyContent.includes('BEGIN PRIVATE KEY') && 
+        !keyContent.includes('BEGIN RSA PRIVATE KEY') && 
+        !keyContent.includes('BEGIN EC PRIVATE KEY')) {
+        throw new Error(`❌ Файл ${keyPath} не является приватным ключом`);
+    }
+    console.log(`✅ Приватный ключ: ${keyPath} (${fs.statSync(keyPath).size} байт)`);
+    
+    // Проверяем сертификат
+    const certPath = '/root/cert/prosubaru.life/fullchain.pem';
+    if (!fs.existsSync(certPath)) {
+        throw new Error(`❌ Не найден сертификат: ${certPath}`);
+    }
+    
+    const certContent = fs.readFileSync(certPath, 'utf8');
+    if (!certContent.includes('BEGIN CERTIFICATE')) {
+        throw new Error(`❌ Файл ${certPath} не является сертификатом`);
+    }
+    console.log(`✅ Сертификат: ${certPath} (${fs.statSync(certPath).size} байт)`);
+    
+    // Проверяем цепочку сертификатов
+    const certCount = (certContent.match(/BEGIN CERTIFICATE/g) || []).length;
+    console.log(`📊 Цепочка содержит ${certCount} сертификат(ов)`);
+    
+} catch (error) {
+    console.error('❌ Ошибка загрузки SSL файлов:', error.message);
+    console.log('\n📁 Содержимое папки /root/cert/prosubaru.life/:');
+    
+    try {
+        const files = fs.readdirSync('/root/cert/prosubaru.life/');
+        files.forEach(file => {
+            const filePath = `/root/cert/prosubaru.life/${file}`;
+            const stats = fs.statSync(filePath);
+            console.log(`  ${file} - ${stats.size} байт`);
+        });
+    } catch (e) {
+        console.log('  Не удалось прочитать директорию');
+    }
+    
+    process.exit(1);
+}
+
+// ====================
+// БАЗОВЫЕ НАСТРОЙКИ
+// ====================
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Логирование
+app.use((req, res, next) => {
+    console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
     next();
 });
 
@@ -172,205 +101,81 @@ app.get('/', (req, res) => {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Express + Cloudflare SSL</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+            <title>ProSubaru.Life - SSL Server</title>
             <style>
-                :root {
-                    --cf-orange: #f38020;
-                    --cf-yellow: #faae40;
-                }
                 body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-family: Arial, sans-serif;
                     margin: 0;
-                    padding: 0;
-                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                    padding: 40px;
+                    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
                     color: white;
-                    min-height: 100vh;
+                    text-align: center;
                 }
                 .container {
-                    max-width: 1200px;
+                    max-width: 800px;
                     margin: 0 auto;
-                    padding: 40px 20px;
-                }
-                header {
-                    text-align: center;
-                    margin-bottom: 50px;
-                }
-                .cf-logo {
-                    font-size: 4em;
-                    color: var(--cf-orange);
-                    margin-bottom: 20px;
-                }
-                .status-badges {
-                    display: flex;
-                    justify-content: center;
-                    gap: 15px;
-                    margin: 20px 0;
-                    flex-wrap: wrap;
-                }
-                .badge {
                     background: rgba(255, 255, 255, 0.1);
-                    padding: 10px 25px;
-                    border-radius: 25px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                }
-                .badge i {
-                    color: var(--cf-yellow);
-                }
-                .grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    gap: 30px;
-                    margin: 40px 0;
-                }
-                .card {
-                    background: rgba(255, 255, 255, 0.05);
-                    border-radius: 15px;
                     padding: 30px;
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    transition: transform 0.3s;
+                    border-radius: 15px;
+                    backdrop-filter: blur(10px);
                 }
-                .card:hover {
-                    transform: translateY(-5px);
-                    background: rgba(255, 255, 255, 0.08);
+                h1 {
+                    color: #4CAF50;
                 }
-                .card h3 {
-                    color: var(--cf-yellow);
-                    margin-top: 0;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-                .info-line {
-                    display: flex;
-                    justify-content: space-between;
-                    padding: 10px 0;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                }
-                .api-links {
-                    display: flex;
-                    gap: 15px;
-                    margin-top: 30px;
-                    flex-wrap: wrap;
-                }
-                .api-link {
-                    background: var(--cf-orange);
+                .status {
+                    display: inline-block;
+                    background: #4CAF50;
                     color: white;
-                    padding: 12px 25px;
-                    border-radius: 8px;
-                    text-decoration: none;
-                    transition: background 0.3s;
+                    padding: 10px 20px;
+                    border-radius: 25px;
+                    margin: 20px 0;
                 }
-                .api-link:hover {
-                    background: var(--cf-yellow);
+                .file-info {
+                    background: rgba(0, 0, 0, 0.2);
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                    text-align: left;
+                    font-family: monospace;
+                }
+                .links a {
+                    display: inline-block;
+                    margin: 10px;
+                    padding: 12px 25px;
+                    background: #2196F3;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 5px;
                 }
             </style>
         </head>
         <body>
             <div class="container">
-                <header>
-                    <div class="cf-logo">
-                        <i class="fas fa-cloud"></i>
-                    </div>
-                    <h1>Express + Cloudflare SSL</h1>
-                    <p>Полная интеграция Cloudflare с SSL/TLS шифрованием</p>
-                    
-                    <div class="status-badges">
-                        <div class="badge">
-                            <i class="fas fa-shield-alt"></i>
-                            SSL: ${req.secure ? 'Активен' : 'Неактивен'}
-                        </div>
-                        <div class="badge">
-                            <i class="fas fa-bolt"></i>
-                            Cloudflare: ${req.fromCloudflare ? 'Подключен' : 'Прямое'}
-                        </div>
-                        <div class="badge">
-                            <i class="fas fa-server"></i>
-                            Порт: ${PORT}
-                        </div>
-                        <div class="badge">
-                            <i class="fas fa-globe"></i>
-                            ${req.headers['cf-ipcountry'] || 'Неизвестно'}
-                        </div>
-                    </div>
-                </header>
-                
-                <div class="grid">
-                    <div class="card">
-                        <h3><i class="fas fa-lock"></i> SSL Информация</h3>
-                        <div class="info-line">
-                            <span>Протокол:</span>
-                            <strong>${req.protocol}</strong>
-                        </div>
-                        <div class="info-line">
-                            <span>Cloudflare SSL:</span>
-                            <strong>Full (Strict)</strong>
-                        </div>
-                        <div class="info-line">
-                            <span>Origin SSL:</span>
-                            <strong>${sslOptions.cert ? 'Установлен' : 'Не установлен'}</strong>
-                        </div>
-                        <div class="info-line">
-                            <span>Шифрование:</span>
-                            <strong>TLS 1.2+</strong>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <h3><i class="fas fa-user"></i> Ваши данные</h3>
-                        <div class="info-line">
-                            <span>Реальный IP:</span>
-                            <code>${req.realIp}</code>
-                        </div>
-                        <div class="info-line">
-                            <span>Страна:</span>
-                            <strong>${req.headers['cf-ipcountry'] || 'Неизвестно'}</strong>
-                        </div>
-                        <div class="info-line">
-                            <span>Ray ID:</span>
-                            <code>${req.headers['cf-ray'] || 'Неизвестно'}</code>
-                        </div>
-                        <div class="info-line">
-                            <span>User Agent:</span>
-                            <small>${req.headers['user-agent']?.substring(0, 50)}...</small>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <h3><i class="fas fa-cogs"></i> Настройки Cloudflare</h3>
-                        <ul>
-                            <li>SSL/TLS: Full (Strict)</li>
-                            <li>Always Use HTTPS: Включено</li>
-                            <li>HTTP/2: Включено</li>
-                            <li>HTTP/3: Включено</li>
-                            <li>WAF: Активен</li>
-                            <li>DDoS защита: Активна</li>
-                        </ul>
-                    </div>
+                <h1>🚗 ProSubaru.Life</h1>
+                <div class="status">
+                    🔐 SSL: ${req.secure ? 'АКТИВЕН' : 'НЕАКТИВЕН'}
                 </div>
                 
-                <div class="api-links">
-                    <a href="/api/status" class="api-link">
-                        <i class="fas fa-heartbeat"></i> Статус API
-                    </a>
-                    <a href="/api/ssl-info" class="api-link">
-                        <i class="fas fa-certificate"></i> SSL Инфо
-                    </a>
-                    <a href="/api/headers" class="api-link">
-                        <i class="fas fa-code"></i> Headers
-                    </a>
-                    <a href="/health" class="api-link">
-                        <i class="fas fa-stethoscope"></i> Health Check
-                    </a>
-                    <a href="/admin/cf-test" class="api-link">
-                        <i class="fas fa-vial"></i> Cloudflare Test
-                    </a>
+                <p>Express сервер с SSL шифрованием</p>
+                
+                <div class="file-info">
+                    <strong>SSL файлы:</strong><br>
+                    🔑 Ключ: /root/cert/prosubaru.life/privkey.pem<br>
+                    📄 Сертификат: /root/cert/prosubaru.life/fullchain.pem<br>
+                    🌐 Домен: prosubaru.life<br>
+                    📍 Порт: ${PORT}
                 </div>
+                
+                <div class="links">
+                    <a href="/api/status">Статус API</a>
+                    <a href="/ssl-info">Инфо SSL</a>
+                    <a href="/health">Health Check</a>
+                    <a href="/cert-check">Проверка сертификата</a>
+                </div>
+                
+                <p style="margin-top: 30px; font-size: 0.9em; color: #aaa;">
+                    Сервер запущен: ${new Date().toLocaleString()}
+                </p>
             </div>
         </body>
         </html>
@@ -381,37 +186,18 @@ app.get('/', (req, res) => {
 app.get('/api/status', (req, res) => {
     res.json({
         status: 'online',
-        server: {
-            name: 'Express + Cloudflare',
-            port: PORT,
-            environment: process.env.NODE_ENV || 'development',
-            uptime: process.uptime(),
-            timestamp: new Date().toISOString()
-        },
-        cloudflare: {
-            enabled: req.fromCloudflare,
-            connectingIp: req.headers['cf-connecting-ip'],
-            rayId: req.headers['cf-ray'],
-            country: req.headers['cf-ipcountry'],
-            visitor: req.headers['cf-visitor'],
-            cacheStatus: req.headers['cf-cache-status']
-        },
-        ssl: {
-            active: req.secure,
-            protocol: req.protocol,
-            forwardedProto: req.headers['x-forwarded-proto']
-        },
-        client: {
-            realIp: req.realIp,
-            userAgent: req.headers['user-agent']
-        }
+        server: 'Express SSL',
+        domain: 'prosubaru.life',
+        ssl: req.secure,
+        port: PORT,
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
     });
 });
 
-// SSL информация
-app.get('/api/ssl-info', (req, res) => {
+app.get('/ssl-info', (req, res) => {
     if (!req.secure) {
-        return res.json({ error: 'Требуется HTTPS соединение' });
+        return res.json({ error: 'Не HTTPS соединение' });
     }
     
     const cert = req.socket.getPeerCertificate();
@@ -420,152 +206,78 @@ app.get('/api/ssl-info', (req, res) => {
             active: true,
             protocol: req.socket.getProtocol(),
             cipher: req.socket.getCipher(),
-            tlsVersion: req.socket.getTlsVersion(),
             certificate: {
                 subject: cert.subject,
                 issuer: cert.issuer,
                 validFrom: cert.valid_from,
-                validTo: cert.valid_to,
-                serialNumber: cert.serialNumber
-            }
-        },
-        cloudflare: {
-            sslMode: 'Full (Strict)',
-            encrypted: true
-        }
-    });
-});
-
-// Все заголовки
-app.get('/api/headers', (req, res) => {
-    res.json({
-        headers: req.headers,
-        cloudflare: {
-            realIp: req.realIp,
-            isFromCloudflare: req.fromCloudflare,
-            cfHeaders: {
-                connectingIp: req.headers['cf-connecting-ip'],
-                rayId: req.headers['cf-ray'],
-                country: req.headers['cf-ipcountry'],
-                visitor: req.headers['cf-visitor'],
-                cacheStatus: req.headers['cf-cache-status']
+                validTo: cert.valid_to
             }
         }
     });
 });
 
-// Health check для Cloudflare
 app.get('/health', (req, res) => {
-    res.status(200).json({
+    res.json({ 
         status: 'healthy',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString() 
     });
 });
 
-// Тест Cloudflare
-app.get('/admin/cf-test', (req, res) => {
-    const isCloudflare = req.fromCloudflare;
-    
-    res.json({
-        cloudflareTest: true,
-        isThroughCloudflare: isCloudflare,
-        yourConfig: {
-            ssl: req.secure ? 'active' : 'inactive',
-            cfHeadersPresent: {
-                'cf-connecting-ip': !!req.headers['cf-connecting-ip'],
-                'cf-ray': !!req.headers['cf-ray'],
-                'cf-ipcountry': !!req.headers['cf-ipcountry']
-            },
-            recommendedSettings: {
-                sslMode: 'Full (Strict)',
-                alwaysUseHTTPS: 'ON',
-                http2: 'ON',
-                http3: 'ON',
-                minTlsVersion: '1.2'
-            }
-        }
-    });
-});
-
-// Проверка подлинности Cloudflare (опционально)
-const verifyCloudflareIP = (req, res, next) => {
-    const cloudflareIPs = [
-        '173.245.48.0/20',
-        '103.21.244.0/22',
-        '103.22.200.0/22',
-        '103.31.4.0/22',
-        '141.101.64.0/18',
-        '108.162.192.0/18',
-        '190.93.240.0/20',
-        '188.114.96.0/20',
-        '197.234.240.0/22',
-        '198.41.128.0/17',
-        '162.158.0.0/15',
-        '104.16.0.0/13',
-        '104.24.0.0/14',
-        '172.64.0.0/13',
-        '131.0.72.0/22'
-    ];
-    
-    const clientIp = req.ip;
-    const isFromCloudflareIP = cloudflareIPs.some(range => {
-        const [rangeIp, mask] = range.split('/');
-        return isIpInRange(clientIp, rangeIp, parseInt(mask));
-    });
-    
-    if (!isFromCloudflareIP && process.env.NODE_ENV === 'production') {
-        return res.status(403).json({ error: 'Доступ только через Cloudflare' });
+app.get('/cert-check', (req, res) => {
+    try {
+        const certContent = fs.readFileSync('/root/cert/prosubaru.life/fullchain.pem', 'utf8');
+        const certs = certContent.split('-----END CERTIFICATE-----')
+            .filter(cert => cert.trim())
+            .map(cert => cert + '-----END CERTIFICATE-----');
+        
+        res.json({
+            certificates: certs.length,
+            firstCert: certs[0]?.substring(0, 200) + '...',
+            fileSize: fs.statSync('/root/cert/prosubaru.life/fullchain.pem').size
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-    
-    next();
-};
+});
 
 // ====================
 // ЗАПУСК СЕРВЕРА
 // ====================
 
-// Запуск HTTPS сервера
-https.createServer(sslOptions, app).listen(PORT, () => {
+// HTTPS сервер
+const httpsServer = https.createServer(sslOptions, app);
+
+httpsServer.listen(PORT, '0.0.0.0', () => {
     console.log(`
-    ===========================================================
-    🚀 Express + Cloudflare SSL сервер запущен!
-    🔗 Локальный: https://localhost:${PORT}
-    🌐 Публичный: https://ваш-домен.com
+    ====================================================
+    🚀 Express SSL сервер запущен!
+    🌐 Домен: prosubaru.life
+    📍 Порт: ${PORT}
+    🔐 SSL: АКТИВЕН
     
-    🔐 SSL НАСТРОЙКИ CLOUDFLARE:
-    1. SSL/TLS → Режим шифрования: Full (strict)
-    2. SSL/TLS → Edge Certificates → Always Use HTTPS: ON
-    3. SSL/TLS → Edge Certificates → Minimum TLS Version: 1.2
-    4. SSL/TLS → Origin Server → Create Certificate
+    📁 SSL файлы:
+    🔑 Приватный ключ: /root/cert/prosubaru.life/privkey.pem
+    📄 Сертификат: /root/cert/prosubaru.life/fullchain.pem
     
-    📋 ПРОВЕРКА:
-    curl -I https://ваш-домен.com
-    curl https://ваш-домен.com/api/status
+    🌐 Доступ по адресам:
+    • https://prosubaru.life:${PORT}
+    • https://localhost:${PORT}
+    • https://[ваш-ip]:${PORT}
     
-    ⚠️  ВАЖНО: 
-    - Origin Certificate действителен 15 лет
-    - Убедитесь что порт ${PORT} открыт в фаерволе
-    ===========================================================
+    🔍 Проверка:
+    curl -k https://localhost:${PORT}
+    openssl s_client -connect localhost:${PORT} -servername prosubaru.life
+    ====================================================
     `);
 });
 
-// HTTP сервер для редиректа (опционально)
-if (process.env.NODE_ENV === 'production') {
-    http.createServer((req, res) => {
-        const host = req.headers.host.replace(`:${PORT}`, '');
-        res.writeHead(301, {
-            'Location': `https://${host}${req.url}`,
-            'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
-        });
-        res.end();
-    }).listen(80, () => {
-        console.log('HTTP → HTTPS редирект на порту 80');
+// HTTP -> HTTPS редирект (опционально)
+http.createServer((req, res) => {
+    const host = req.headers.host.split(':')[0];
+    res.writeHead(301, { 
+        'Location': `https://${host}:${PORT}${req.url}` 
     });
-}
-
-// Вспомогательные функции
-function isIpInRange(ip, rangeIp, mask) {
-    const ipToInt = (ip) => ip.split('.').reduce((int, oct) => (int << 8) + parseInt(oct, 10), 0) >>> 0;
-    const maskInt = ~((1 << (32 - mask)) - 1) >>> 0;
-    return (ipToInt(ip) & maskInt) === (ipToInt(rangeIp) & maskInt);
-}
+    res.end();
+}).listen(80, () => {
+    console.log('🔄 HTTP -> HTTPS редирект на порту 80');
+});
