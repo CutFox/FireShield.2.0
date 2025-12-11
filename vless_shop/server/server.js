@@ -6,9 +6,30 @@ app.post("/post", async (req, res) => {
   res.send("add post endpoint");
 });
 
-app.get('/test', async (req, res) => {
-    res.send(`You searched for test endpoint.`);
-    console.log('test endpoint was hit');
+app.get('/redirect_app', async (req, res) => {
+    try {
+        const { target } = req.query;
+        if (!target) {
+            return res.status(404);
+        }
+        let targetUrl;
+        try {
+            
+            if (target.startsWith('happ')) {
+              targetUrl = new URL(target);  
+            }
+
+        } catch {
+            console.log('Invalid URL format');
+        }
+        res.redirect(target);
+    } catch (error) {
+        console.error('Redirect error:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: error.message
+        });
+    }
 });
 
 app.get('/redirect', (req, res) => {
