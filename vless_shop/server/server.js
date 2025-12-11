@@ -4,6 +4,7 @@ const app = express();
 
 app.get('/test', ( res) => {
     res.send(`You searched for test endpoint.`);
+    console.log('test endpoint was hit');
 });
 // Стрелочные функции + параметры по умолчанию
 app.get('/redirect', (res) => {
