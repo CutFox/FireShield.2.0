@@ -72,8 +72,8 @@ const PORT = process.env.PORT || 3000;
 
 const sslOptions = {
     // Cloudflare Origin Certificate
-    key: fs.readFileSync(path.join(__dirname, 'ssl/cloudflare-origin.key')),
-    cert: fs.readFileSync(path.join(__dirname, 'ssl/cloudflare-origin.pem')),
+    key: fs.readFileSync(path.join(__dirname, '/root/cert/prosubaru.life/fullchain.pem')),
+    cert: fs.readFileSync(path.join(__dirname, '/root/cert/prosubaru.life/privkey.pem')),
     
     // ИЛИ Let's Encrypt (если хотите прямой доступ)
     // key: fs.readFileSync('/etc/letsencrypt/live/ваш-домен.com/privkey.pem'),
